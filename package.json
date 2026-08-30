@@ -45,7 +45,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/compartsoftware/open-edge-sdk.git"
+    "url": "git+https://github.com/ozgurvurgun/open-edge-sdk.git"
   },
   "keywords": [
     "observability",
