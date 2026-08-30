@@ -1,0 +1,61 @@
+{
+  "name": "@open-edge/sdk",
+  "version": "0.5.1",
+  "description": "Open Edge instrumentation SDK.",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./hono": {
+      "types": "./dist/adapters/hono.d.ts",
+      "import": "./dist/adapters/hono.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "ARCHITECTURE.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.build.json --noEmit",
+    "test": "vitest run",
+    "prepare": "npm run build"
+  },
+  "peerDependencies": {
+    "hono": "^4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "hono": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "hono": "^4.7.10",
+    "typescript": "^6.0.3",
+    "vitest": "^3.1.4"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/compartsoftware/open-edge-sdk.git"
+  },
+  "keywords": [
+    "observability",
+    "apm",
+    "logs",
+    "metrics",
+    "traces",
+    "open-edge",
+    "cloudflare-workers",
+    "w3c-trace-context",
+    "hono"
+  ]
+}
