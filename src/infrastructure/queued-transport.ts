@@ -29,6 +29,10 @@ export function createQueuedTransport(
     return item.events.length;
   }
 
+  function recount(): void {
+    eventCount = queue.reduce((n, item) => n + countEvents(item), 0);
+  }
+
   function enqueue(kind: Kind, events: unknown[]): void {
     if (events.length === 0) return;
     let incoming = events;
@@ -73,7 +77,9 @@ export function createQueuedTransport(
     flushing = true;
     try {
       while (queue.length > 0) {
-        const batch = queue.slice();
+        const batch = queue.splice(0, queue.length);
+        recount();
+
         const logs: unknown[] = [];
         const metrics: unknown[] = [];
         const traces: unknown[] = [];
@@ -82,19 +88,31 @@ export function createQueuedTransport(
           else if (item.kind === "metrics") metrics.push(...item.events);
           else traces.push(...item.events);
         }
-        try {
-          const jobs: Promise<void>[] = [];
-          if (logs.length) jobs.push(inner.ingestLogs(logs));
-          if (metrics.length) jobs.push(inner.ingestMetrics(metrics));
-          if (traces.length) jobs.push(inner.ingestTraces(traces));
-          const results = await Promise.allSettled(jobs);
-          for (const r of results) {
-            if (r.status === "rejected") throw r.reason;
+
+        const jobs: Array<{ kind: Kind; events: unknown[]; run: Promise<void> }> = [];
+        if (logs.length) jobs.push({ kind: "logs", events: logs, run: inner.ingestLogs(logs) });
+        if (metrics.length) {
+          jobs.push({ kind: "metrics", events: metrics, run: inner.ingestMetrics(metrics) });
+        }
+        if (traces.length) {
+          jobs.push({ kind: "traces", events: traces, run: inner.ingestTraces(traces) });
+        }
+
+        const results = await Promise.allSettled(jobs.map((j) => j.run));
+        const failed: Item[] = [];
+        let firstError: unknown;
+        for (let i = 0; i < results.length; i += 1) {
+          const result = results[i]!;
+          const job = jobs[i]!;
+          if (result.status === "rejected") {
+            failed.push({ kind: job.kind, events: job.events });
+            firstError ??= result.reason;
           }
-          queue.splice(0, batch.length);
-          eventCount = queue.reduce((n, item) => n + countEvents(item), 0);
-        } catch (error) {
-          throw error;
+        }
+        if (failed.length > 0) {
+          queue.unshift(...failed);
+          recount();
+          throw firstError;
         }
       }
     } finally {

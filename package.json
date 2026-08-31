@@ -1,6 +1,6 @@
 {
   "name": "@open-edge/sdk",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "Open Edge instrumentation SDK.",
   "type": "module",
   "license": "MIT",

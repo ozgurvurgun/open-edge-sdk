@@ -20,6 +20,7 @@ import {
 } from "../domain/cardinality.js";
 
 type LogEvent = {
+  eventId: string;
   timestamp: number;
   line: string;
   labels: Record<string, string>;
@@ -29,6 +30,7 @@ type LogEvent = {
 };
 
 type MetricEvent = {
+  eventId: string;
   timestamp: number;
   name: string;
   type: "counter" | "gauge" | "histogram";
@@ -37,6 +39,7 @@ type MetricEvent = {
 };
 
 type TraceEvent = {
+  eventId: string;
   traceId: string;
   spans: Array<{
     spanId: string;
@@ -58,10 +61,9 @@ export type SessionOptions = {
   cardinality?: CardinalityGuard;
 };
 
-/**
- * Buffers telemetry for one unit of work, then POSTs ingest batches.
- * Labels are sanitized; optional sampling + cardinality guards apply.
- */
+function newEventId(): string {
+  return globalThis.crypto.randomUUID();
+}
 export function createTelemetrySession(
   transport: IngestTransport,
   identity: ServiceIdentity,
@@ -90,6 +92,7 @@ export function createTelemetrySession(
         level: record.level,
       });
       logs.push({
+        eventId: newEventId(),
         timestamp: record.timestamp ?? Date.now(),
         line: record.message.slice(0, 16_384),
         labels,
@@ -113,6 +116,7 @@ export function createTelemetrySession(
         return;
       }
       metrics.push({
+        eventId: newEventId(),
         timestamp: record.timestamp ?? Date.now(),
         name: record.name,
         type: record.type,
@@ -175,6 +179,7 @@ export function createTelemetrySession(
     async flush() {
       if (!sampled) return;
       const traces: TraceEvent[] = [...spansByTrace.entries()].map(([id, spans]) => ({
+        eventId: newEventId(),
         traceId: id,
         spans: spans.map((s) => ({
           spanId: s.spanId,

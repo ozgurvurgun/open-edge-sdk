@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.2
+
+- Assign stable `eventId` on log / metric / trace events for backend ingest dedup
+- Queued flush keeps only failed kinds on partial failure (no re-send of successes)
+
 ## 0.5.0
 
 - **`durableSpill`** - on ingest failure, spill to Open Edge `POST /api/v1/buffer/enqueue` (server DO)

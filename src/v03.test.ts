@@ -72,6 +72,28 @@ describe("queued transport", () => {
     expect(drops.reduce((a, b) => a + b, 0)).toBeGreaterThan(0);
     expect(q.pending()).toBeLessThanOrEqual(2);
   });
+
+  it("keeps only failed kinds after a partial flush", async () => {
+    const inner: IngestTransport = {
+      ingestLogs: vi.fn(async () => undefined),
+      ingestMetrics: vi.fn(async () => {
+        throw new Error("metrics down");
+      }),
+      ingestTraces: vi.fn(async () => undefined),
+    };
+    const q = createQueuedTransport(inner, { flushIntervalMs: 0, maxQueueEvents: 100 });
+    await q.ingestLogs([{ eventId: "l1" }]);
+    await q.ingestMetrics([{ eventId: "m1" }]);
+    await expect(q.flushNow()).rejects.toThrow("metrics down");
+    expect(inner.ingestLogs).toHaveBeenCalledOnce();
+    expect(q.pending()).toBe(1);
+
+    (inner.ingestMetrics as ReturnType<typeof vi.fn>).mockImplementation(async () => undefined);
+    await q.flushNow();
+    expect(inner.ingestLogs).toHaveBeenCalledOnce();
+    expect(inner.ingestMetrics).toHaveBeenCalledTimes(2);
+    expect(q.pending()).toBe(0);
+  });
 });
 
 describe("sampling in session", () => {

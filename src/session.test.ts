@@ -59,11 +59,21 @@ describe("TelemetrySession", () => {
     expect(transport.ingestLogs).toHaveBeenCalledOnce();
     const logEvents = (transport.ingestLogs as ReturnType<typeof vi.fn>).mock.calls[0]![0] as Array<{
       labels: Record<string, string>;
+      eventId: string;
     }>;
     expect(logEvents[0]!.labels.order_id).toBeUndefined();
     expect(logEvents[0]!.labels.route).toBe("r1");
+    expect(logEvents[0]!.eventId).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+    );
     expect(transport.ingestMetrics).toHaveBeenCalledOnce();
+    const metricEvents = (transport.ingestMetrics as ReturnType<typeof vi.fn>).mock
+      .calls[0]![0] as Array<{ eventId: string }>;
+    expect(metricEvents[0]!.eventId).toBeTruthy();
     expect(transport.ingestTraces).toHaveBeenCalledOnce();
+    const traceEvents = (transport.ingestTraces as ReturnType<typeof vi.fn>).mock
+      .calls[0]![0] as Array<{ eventId: string }>;
+    expect(traceEvents[0]!.eventId).toBeTruthy();
   });
 });
 

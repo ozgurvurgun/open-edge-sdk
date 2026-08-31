@@ -110,7 +110,7 @@ await t.flush();
 await oe.flush();
 ```
 
-Unsampled sessions (`sampleRate`) no-op on record/flush. Labels are sanitized; `service` and `env` come from `OpenEdge` identity.
+Unsampled sessions (`sampleRate`) no-op on record/flush. Labels are sanitized; `service` and `env` come from `OpenEdge` identity. Each buffered log, metric, and trace event gets a client `eventId` (UUID) so Open Edge ingest dedup can drop retries.
 
 ## Instrumented fetch
 
